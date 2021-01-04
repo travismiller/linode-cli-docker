@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+set -e
+
+IMAGE_TAG=${IMAGE_TAG:-linode-cli:latest}
+
+# https://stackoverflow.com/a/246128/1596013
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+function docker_run {
+  case "$1" in
+    # Special escape hatch into container’s shell.
+    bash|sh)
+      echo 'docker run --rm --interactive --tty --entrypoint='
+    ;;
+
+    # The `linode-cli configure` command prompts for input so be interactive.
+    configure)
+      echo "docker run --rm --interactive"
+    ;;
+
+    # Pass any other commands to linode-cli.
+    *)
+      echo "docker run --rm"
+    ;;
+  esac
+}
+
+function config_volume {
+  echo "-v ${1}:/home/linode/.config"
+}
+
+$(docker_run "$1") \
+  $(config_volume "${DIR}/../.config") \
+  -e LINODE_CLI_TOKEN \
+  "${IMAGE_TAG}" \
+  "$@"
